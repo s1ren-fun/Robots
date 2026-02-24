@@ -31,6 +31,7 @@ public class GameWindow extends JInternalFrame implements Stateful{
         state.put("height", String.valueOf(getHeight()));
         state.put("isIcon", String.valueOf(isIcon()));
         state.put("isMaximum", String.valueOf(isMaximum()));
+        state.put("isClosed", String.valueOf(isClosed()));
     }
 
     @Override
@@ -42,13 +43,18 @@ public class GameWindow extends JInternalFrame implements Stateful{
             int height = Integer.parseInt(state.getOrDefault("height", String.valueOf(getHeight())));
             boolean isIcon = Boolean.parseBoolean(state.getOrDefault("isIcon", "false"));
             boolean isMaximum = Boolean.parseBoolean(state.getOrDefault("isMaximum", "false"));
+            boolean isClosed = Boolean.parseBoolean(state.getOrDefault("isClosed", "false"));
 
             setBounds(x, y, width, height);
             setIcon(isIcon);
             try {
                 setMaximum(isMaximum);
             } catch (Exception e) {
-                // ignore
+                log.Logger.error("Ошибка восстановления состояния GameWindow: " + e.getMessage());            }
+            try {
+                setClosed(isClosed);
+            } catch (Exception e) {
+                log.Logger.error("Ошибка восстановления закрытости GameWindow: " + e.getMessage());
             }
             } catch (NumberFormatException e) {
                 log.Logger.error("Ошибка восстановления состояния GameWindow: " + e.getMessage());

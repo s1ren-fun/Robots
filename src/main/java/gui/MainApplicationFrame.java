@@ -39,15 +39,6 @@ public class MainApplicationFrame extends JFrame implements Stateful{
 
         setContentPane(desktopPane);
 
-        LogWindow logWindow = createLogWindow();
-        addWindow(logWindow);
-        stateManager.register(logWindow, "log_0");
-
-        GameWindow gameWindow = createGameWindow();
-        gameWindow.setSize(400, 400);
-        addWindow(gameWindow);
-        stateManager.register(gameWindow, "game_0");
-
         stateManager.restoreAll();
 
         restoreWindows();
@@ -86,13 +77,13 @@ public class MainApplicationFrame extends JFrame implements Stateful{
      * Восстанавливает все окна лога и игровые окна на основе сохранённых счётчиков.
      */
     private void restoreWindows() {
-        for (int i = 1; i <= logWindowCounter; i++) {
+        for (int i = 0; i <= logWindowCounter; i++) {
             LogWindow logWindow = createLogWindow();
             addWindow(logWindow);
             stateManager.register(logWindow, "log_" + i);
         }
 
-        for (int i = 1; i <= gameWindowCounter; i++) {
+        for (int i = 0; i <= gameWindowCounter; i++) {
             GameWindow gameWindow = createGameWindow();
             addWindow(gameWindow);
             stateManager.register(gameWindow, "game_" + i);
