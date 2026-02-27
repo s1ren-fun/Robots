@@ -1,6 +1,11 @@
 package gui;
 
+import game.GameModel;
 import log.Logger;
+import state.AppStateManager;
+import state.StateSaveEvent;
+import state.StateSaveListener;
+import state.Stateful;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,7 +19,7 @@ import java.util.Map;
  * Содержит меню управления внешним видом и тестовыми командами,
  * а также создаёт начальные внутренние окна: лог и игровое поле.
  */
-public class MainApplicationFrame extends JFrame implements Stateful{
+public class MainApplicationFrame extends JFrame implements Stateful {
     private final JDesktopPane desktopPane = new JDesktopPane();
     private final AppStateManager stateManager;
     private final List<StateSaveListener> stateSaveListener = new ArrayList<StateSaveListener>();
@@ -30,7 +35,6 @@ public class MainApplicationFrame extends JFrame implements Stateful{
     public MainApplicationFrame() {
         stateManager = new AppStateManager();
         stateManager.register(this, "main");
-
         int inset = 50;
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         setBounds(inset, inset,
@@ -84,9 +88,13 @@ public class MainApplicationFrame extends JFrame implements Stateful{
         }
 
         for (int i = 0; i <= gameWindowCounter; i++) {
-            GameWindow gameWindow = createGameWindow();
+            GameModel model = new GameModel();
+            GameWindow gameWindow = createGameWindow(model);
             addWindow(gameWindow);
             stateManager.register(gameWindow, "game_" + i);
+            CoordinatesWindow coordinatesWindow = createCoordinatesWindow(model);
+            addWindow(coordinatesWindow);
+            stateManager.register(coordinatesWindow,"coor_"+i);
         }
 
         stateManager.restoreAll();
@@ -110,14 +118,20 @@ public class MainApplicationFrame extends JFrame implements Stateful{
      *
      * @return новое игровое окно
      */
-    protected GameWindow createGameWindow() {
-        GameWindow gameWindow = new GameWindow();
+    protected GameWindow createGameWindow(GameModel model) {
+        GameWindow gameWindow = new GameWindow(model);
         gameWindow.setLocation(50 + (gameWindowCounter * 30), 50 + (gameWindowCounter * 30));
         gameWindow.setSize(400, 400);
         Logger.debug("Создано новое игровое окно");
         return gameWindow;
     }
 
+    protected CoordinatesWindow createCoordinatesWindow(GameModel model){
+        CoordinatesWindow coordinatesWindow = new CoordinatesWindow(model);
+        coordinatesWindow.setLocation(50 + (gameWindowCounter * 30), 50 + (gameWindowCounter * 30));
+        Logger.debug("Создано новое окно координат");
+        return coordinatesWindow;
+    }
     /**
      * Добавляет внутреннее окно на рабочий стол и делает его видимым.
      */
@@ -148,10 +162,14 @@ public class MainApplicationFrame extends JFrame implements Stateful{
         JMenuItem gameItem = new JMenuItem("Новое игровое окно", KeyEvent.VK_G);
         gameItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.CTRL_DOWN_MASK));
         gameItem.addActionListener(e -> {
-            GameWindow gameWindow = createGameWindow();
+            GameModel model = new GameModel();
+            GameWindow gameWindow = createGameWindow(model);
             addWindow(gameWindow);
             gameWindowCounter++;
             stateManager.register(gameWindow,"game_" + gameWindowCounter);
+            CoordinatesWindow coordinatesWindow = createCoordinatesWindow(model);
+            addWindow(coordinatesWindow);
+            stateManager.register(coordinatesWindow,"coor_"+gameWindowCounter);
         });
         fileMenu.add(gameItem);
 

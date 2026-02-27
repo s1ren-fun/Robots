@@ -1,4 +1,4 @@
-package gui;
+package state;
 
 import java.util.Map;
 
@@ -6,6 +6,7 @@ import java.util.Map;
  * интерфейс для объектов, котрые сохраняют и востанавливают свое состояние
  */
 public interface Stateful {
+
     /**
      * сохраняет состояние объекта
      * @param state словарь для записи

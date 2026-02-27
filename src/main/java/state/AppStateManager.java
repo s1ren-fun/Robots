@@ -1,4 +1,4 @@
-package gui;
+package state;
 
 import log.Logger;
 
