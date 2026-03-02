@@ -12,7 +12,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+
 
 /**
  * Главное окно приложения с рабочим столом (JDesktopPane).
@@ -34,7 +34,7 @@ public class MainApplicationFrame extends JFrame implements Stateful {
      */
     public MainApplicationFrame() {
         stateManager = new AppStateManager();
-        stateManager.register(this, "main");
+        stateManager.register(this);
         int inset = 50;
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         setBounds(inset, inset,
@@ -61,6 +61,7 @@ public class MainApplicationFrame extends JFrame implements Stateful {
 
     /**
      * Добавляет слушателя события сохранения состояния.
+     *
      * @param listener
      */
     public void addStateSaveListener(StateSaveListener listener) {
@@ -84,17 +85,20 @@ public class MainApplicationFrame extends JFrame implements Stateful {
         for (int i = 0; i <= logWindowCounter; i++) {
             LogWindow logWindow = createLogWindow();
             addWindow(logWindow);
-            stateManager.register(logWindow, "log_" + i);
+            logWindow.setWindowName("log_"+i);
+            stateManager.register(logWindow);
         }
 
         for (int i = 0; i <= gameWindowCounter; i++) {
             GameModel model = new GameModel();
             GameWindow gameWindow = createGameWindow(model);
             addWindow(gameWindow);
-            stateManager.register(gameWindow, "game_" + i);
+            gameWindow.setWindowName("game_"+i);
+            stateManager.register(gameWindow);
             CoordinatesWindow coordinatesWindow = createCoordinatesWindow(model);
             addWindow(coordinatesWindow);
-            stateManager.register(coordinatesWindow,"coor_"+i);
+            coordinatesWindow.setWindowName("coor_"+i);
+            stateManager.register(coordinatesWindow);
         }
 
         stateManager.restoreAll();
@@ -109,7 +113,7 @@ public class MainApplicationFrame extends JFrame implements Stateful {
         logWindow.setSize(300, 800);
         setMinimumSize(logWindow.getSize());
         logWindow.pack();
-        Logger.debug(logWindowCounter==0?"Протокол работает":"Создано новое окно лого");
+        Logger.debug(logWindowCounter == 0 ? "Протокол работает" : "Создано новое окно лого");
         return logWindow;
     }
 
@@ -126,12 +130,13 @@ public class MainApplicationFrame extends JFrame implements Stateful {
         return gameWindow;
     }
 
-    protected CoordinatesWindow createCoordinatesWindow(GameModel model){
+    protected CoordinatesWindow createCoordinatesWindow(GameModel model) {
         CoordinatesWindow coordinatesWindow = new CoordinatesWindow(model);
         coordinatesWindow.setLocation(50 + (gameWindowCounter * 30), 50 + (gameWindowCounter * 30));
         Logger.debug("Создано новое окно координат");
         return coordinatesWindow;
     }
+
     /**
      * Добавляет внутреннее окно на рабочий стол и делает его видимым.
      */
@@ -166,10 +171,12 @@ public class MainApplicationFrame extends JFrame implements Stateful {
             GameWindow gameWindow = createGameWindow(model);
             addWindow(gameWindow);
             gameWindowCounter++;
-            stateManager.register(gameWindow,"game_" + gameWindowCounter);
+            gameWindow.setWindowName("game_"+gameWindowCounter);
+            stateManager.register(gameWindow);
             CoordinatesWindow coordinatesWindow = createCoordinatesWindow(model);
             addWindow(coordinatesWindow);
-            stateManager.register(coordinatesWindow,"coor_"+gameWindowCounter);
+            coordinatesWindow.setWindowName("coor_"+gameWindowCounter);
+            stateManager.register(coordinatesWindow);
         });
         fileMenu.add(gameItem);
 
@@ -179,7 +186,8 @@ public class MainApplicationFrame extends JFrame implements Stateful {
             LogWindow logWindow = createLogWindow();
             addWindow(logWindow);
             logWindowCounter++;
-            stateManager.register(logWindow,"log_" + logWindowCounter);
+            logWindow.setWindowName("log_"+gameWindowCounter);
+            stateManager.register(logWindow);
         });
         fileMenu.add(logItem);
 
@@ -272,7 +280,7 @@ public class MainApplicationFrame extends JFrame implements Stateful {
     /**
      * Устанавливает схему оформления (Look and Feel) для приложения.
      */
-    private void setLookAndFeel(String className) {
+    public void setLookAndFeel(String className) {
         try {
             UIManager.setLookAndFeel(className);
             SwingUtilities.updateComponentTreeUI(this);
@@ -282,37 +290,18 @@ public class MainApplicationFrame extends JFrame implements Stateful {
         }
     }
 
-    @Override
-    public void saveState(Map<String, String> state) {
-        state.put("x",String.valueOf(getX()));
-        state.put("y",String.valueOf(getY()));
-        state.put("width",String.valueOf(getWidth()));
-        state.put("height",String.valueOf(getHeight()));
-        state.put("extendedState",String.valueOf(getExtendedState()));
-        state.put("logWindowCounter", String.valueOf(logWindowCounter));
-        state.put("gameWindowCounter", String.valueOf(gameWindowCounter));
-        state.put("lookAndFeel", currentLookAndFeel);
-    }
+    public int getLogWindowCounter() { return logWindowCounter; }
+    public void setLogWindowCounter(int value) { this.logWindowCounter = value; }
+
+    public int getGameWindowCounter() { return gameWindowCounter; }
+    public void setGameWindowCounter(int value) { this.gameWindowCounter = value; }
+
+    public String getCurrentLookAndFeel() { return currentLookAndFeel; }
+    public void setCurrentLookAndFeel(String value) { this.currentLookAndFeel = value; }
 
     @Override
-    public void loadState(Map<String, String> state) {
-        try {
-            int x = Integer.parseInt(state.getOrDefault("x", String.valueOf(getX())));
-            int y = Integer.parseInt(state.getOrDefault("y", String.valueOf(getY())));
-            int width = Integer.parseInt(state.getOrDefault("width", String.valueOf(getWidth())));
-            int height = Integer.parseInt(state.getOrDefault("height", String.valueOf(getHeight())));
-            int extendedState = Integer.parseInt(state.getOrDefault("extendedState", String.valueOf(getExtendedState())));
-            logWindowCounter = Integer.parseInt(state.getOrDefault("logWindowCounter", "0"));
-            gameWindowCounter = Integer.parseInt(state.getOrDefault("gameWindowCounter", "0"));
-            String savedLookAndFeel = state.getOrDefault("lookAndFeel",
-                    "javax.swing.plaf.nimbus.NimbusLookAndFeel");
-
-            setBounds(x, y, width, height);
-            setExtendedState(extendedState);
-            setLookAndFeel(savedLookAndFeel);
-            currentLookAndFeel = savedLookAndFeel;
-        } catch (NumberFormatException e) {
-            log.Logger.error("Ошибка восстановления состояния главного окна: " + e.getMessage());
-        }
+    public String getWindowName() {
+        return "main";
     }
+
 }

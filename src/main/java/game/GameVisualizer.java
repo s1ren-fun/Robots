@@ -38,14 +38,23 @@ public class GameVisualizer extends JPanel implements PropertyChangeListener {
         drawTarget(g2d, model.getTargetX(), model.getTargetY());
     }
 
+    /**
+     * метод для заполнения овала с центром в заданной точке.
+     */
     private static void fillOval(Graphics g, int centerX, int centerY, int diam1, int diam2) {
         g.fillOval(centerX - diam1 / 2, centerY - diam2 / 2, diam1, diam2);
     }
 
+    /**
+     * метод для отрисовки контура овала с центром в заданной точке.
+     */
     private static void drawOval(Graphics g, int centerX, int centerY, int diam1, int diam2) {
         g.drawOval(centerX - diam1 / 2, centerY - diam2 / 2, diam1, diam2);
     }
 
+    /**
+     * Отрисовывает робота с учётом его текущего направления.
+     */
     private void drawRobot(Graphics2D g, int robotCenterX, int robotCenterY, double direction) {
         AffineTransform t = AffineTransform.getRotateInstance(direction,
                 robotCenterX, robotCenterY);
@@ -60,6 +69,9 @@ public class GameVisualizer extends JPanel implements PropertyChangeListener {
         drawOval(g, robotCenterX + 10, robotCenterY, 5, 5);
     }
 
+    /**
+     * Отрисовывает цель на игровом поле.
+     */
     private void drawTarget(Graphics2D g, int x, int y) {
         AffineTransform t = AffineTransform.getRotateInstance(0, 0, 0);
         g.setTransform(t);

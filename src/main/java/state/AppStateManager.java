@@ -1,116 +1,146 @@
 package state;
 
-import log.Logger;
 
+import gui.MainApplicationFrame;
+
+import javax.swing.*;
+import java.beans.PropertyVetoException;
 import java.io.*;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Менеджер состояний приложения.
- * Управляет глобальным словарем состояний, сохранением в файл и регистрацией компонентов.
+ * Управляет глобальным словарем состояний, регистрацией компонентов.
  */
 public class AppStateManager implements StateSaveListener {
-    private final Map<String, String> globalState = new HashMap<>();
-    private final List<StatefulComponent> registeredComponents = new CopyOnWriteArrayList<>();
-    private final String configPath;
-
-    /**
-     * Внутренний класс-обёртка для зарегистрированного компонента.
-     * Хранит ссылку на компонент и его префикс в глобальном словаре.
-     */
-    private class StatefulComponent {
-        Stateful component;
-        String prefix;
-
-        StatefulComponent(Stateful component, String prefix) {
-            this.component = component;
-            this.prefix = prefix;
-        }
-    }
+    private final FileStateManager storage;
+    private final Map<String, String> globalState;
+    private final List<Stateful> components = new CopyOnWriteArrayList<>();
 
     /**
      * Создаёт новый экземпляр менеджера состояний.
      */
     public AppStateManager() {
         String home = System.getProperty("user.home");
-        this.configPath = home + File.separator + "Dudin" + File.separator + "state.cfg";
-        loadFromFile();
+        String configPath = home + File.separator + "Dudin" + File.separator + "state.cfg";
+
+        this.storage = new FileStateManager(configPath);
+        this.globalState = storage.getState();
     }
 
     /**
-     *  Регистрирует компонент для участия в сохранении состояния.
-     * @param component
-     * @param prefix
+     * Регистрирует компонент для участия в сохранении состояния.
      */
-    public void register(Stateful component, String prefix) {
-        registeredComponents.add(new StatefulComponent(component, prefix));
+    public void register(Stateful component) {
+        components.add(component);
     }
 
     /**
      * Восстанавливает состояние всех зарегистрированных компонентов.
      */
     public void restoreAll() {
-        for (StatefulComponent sc : registeredComponents) {
-            PrefixedMapView view = new PrefixedMapView(globalState, sc.prefix);
-            sc.component.loadState(view);
+        for (Stateful component : components) {
+            String prefix = component.getWindowName();
+            PrefixedMapView  view = new PrefixedMapView(globalState,prefix);
+
+            if (prefix.equals("main") && component instanceof JFrame) {
+                JFrame frame = (JFrame) component;
+                try {
+                    int x = parseInt(view.get(prefix + ".x"), frame.getX());
+                    int y = parseInt(view.get(prefix + ".y"), frame.getY());
+                    int w = parseInt(view.get(prefix + ".width"), frame.getWidth());
+                    int h = parseInt(view.get(prefix + ".height"), frame.getHeight());
+                    int ext = parseInt(view.get(prefix + ".extendedState"), frame.getExtendedState());
+
+                    frame.setBounds(x, y, w, h);
+                    frame.setExtendedState(ext);
+
+                    if (component instanceof MainApplicationFrame) {
+                        MainApplicationFrame main = (MainApplicationFrame) component;
+                        main.setLogWindowCounter(parseInt(view.get(prefix + ".logWindowCounter"), 0));
+                        main.setGameWindowCounter(parseInt(view.get(prefix + ".gameWindowCounter"), 0));
+                        String laf = view.get(prefix + ".lookAndFeel");
+                        if (laf != null) {
+                            main.setCurrentLookAndFeel(laf);
+                            main.setLookAndFeel(laf);
+                        }
+                    }
+
+                } catch (NumberFormatException e) {
+                    log.Logger.error("Ошибка восстановления главного окна: " + e.getMessage());
+                }
+
+            } else if (component instanceof JInternalFrame) {
+                JInternalFrame frame = (JInternalFrame) component;
+                try {
+                    int x = parseInt(view.get(prefix + ".x"), frame.getX());
+                    int y = parseInt(view.get(prefix + ".y"), frame.getY());
+                    int w = parseInt(view.get(prefix + ".width"), frame.getWidth());
+                    int h = parseInt(view.get(prefix + ".height"), frame.getHeight());
+                    boolean isIcon = parseBool(view.get(prefix + ".isIcon"), false);
+                    boolean isMaximum = parseBool(view.get(prefix + ".isMaximum"), false);
+                    boolean isClosed = parseBool(view.get(prefix + ".isClosed"), false);
+
+                    frame.setBounds(x, y, w, h);
+                    frame.setIcon(isIcon);
+
+                    if (isMaximum) frame.setMaximum(true);
+                    if (isClosed) frame.setClosed(true);
+
+                } catch (PropertyVetoException e) {
+                    log.Logger.error("Ошибка восстановления окна " + prefix + ": " + e.getMessage());
+                }
+            }
         }
     }
 
+
     /**
-     * Сохраняет состояние всех зарегистрированных компонентов.
+     * Сохраняет состояние всех зарегистрированных компонентов и пишет в файл.
      */
     public void saveAll() {
-        for (StatefulComponent sc : registeredComponents) {
-            PrefixedMapView view = new PrefixedMapView(globalState, sc.prefix);
-            sc.component.saveState(view);
+        for (Stateful component : components) {
+            String prefix = component.getWindowName();
+            PrefixedMapView  view = new PrefixedMapView(globalState,prefix);
+
+            if (prefix.equals("main") && component instanceof JFrame) {
+                JFrame frame = (JFrame) component;
+                view.put(prefix + ".x", String.valueOf(frame.getX()));
+                view.put(prefix + ".y", String.valueOf(frame.getY()));
+                view.put(prefix + ".width", String.valueOf(frame.getWidth()));
+                view.put(prefix + ".height", String.valueOf(frame.getHeight()));
+                view.put(prefix + ".extendedState", String.valueOf(frame.getExtendedState()));
+
+                if (component instanceof MainApplicationFrame) {
+                    MainApplicationFrame main = (MainApplicationFrame) component;
+                    view.put(prefix + ".logWindowCounter", String.valueOf(main.getLogWindowCounter()));
+                    view.put(prefix + ".gameWindowCounter", String.valueOf(main.getGameWindowCounter()));
+                    view.put(prefix + ".lookAndFeel", main.getCurrentLookAndFeel());
+                }
+
+            } else if (component instanceof JInternalFrame) {
+                JInternalFrame frame = (JInternalFrame) component;
+                view.put(prefix + ".x", String.valueOf(frame.getX()));
+                view.put(prefix + ".y", String.valueOf(frame.getY()));
+                view.put(prefix + ".width", String.valueOf(frame.getWidth()));
+                view.put(prefix + ".height", String.valueOf(frame.getHeight()));
+                view.put(prefix + ".isIcon", String.valueOf(frame.isIcon()));
+                view.put(prefix + ".isMaximum", String.valueOf(frame.isMaximum()));
+                view.put(prefix + ".isClosed", String.valueOf(frame.isClosed()));
+            }
         }
-        saveToFile();
+        storage.save();
     }
 
-    /**
-     *  Сохраняет глобальный словарь состояний в файл конфигурации.
-     */
-    private void saveToFile() {
-        try {
-            File file = new File(configPath);
-            File parent = file.getParentFile();
-            if (parent != null && !parent.exists()) {
-                parent.mkdirs();
-            }
-            Properties props = new Properties();
-            props.putAll(globalState);
-            try (FileOutputStream out = new FileOutputStream(file)) {
-                props.store(out, "Application State");
-            }
-            Logger.debug("Состояние сохранено в " + configPath);
-        } catch (IOException e) {
-            Logger.error("Ошибка сохранения состояния: " + e.getMessage());
-        }
+    private int parseInt(String value, int defaultValue) {
+        try { return value != null ? Integer.parseInt(value) : defaultValue; }
+        catch (NumberFormatException e) { return defaultValue; }
     }
 
-    /**
-     * Загружает состояние из файла конфигурации при инициализации.
-     */
-    private void loadFromFile() {
-        try {
-            File file = new File(configPath);
-            if (file.exists()) {
-                Properties props = new Properties();
-                try (FileInputStream in = new FileInputStream(file)) {
-                    props.load(in);
-                }
-                for (String key : props.stringPropertyNames()) {
-                    globalState.put(key, props.getProperty(key));
-                }
-                Logger.debug("Состояние загружено из " + configPath);
-            }
-        } catch (IOException e) {
-            Logger.error("Ошибка загрузки состояния: " + e.getMessage());
-        }
+    private boolean parseBool(String value, boolean defaultValue) {
+        return value != null ? Boolean.parseBoolean(value) : defaultValue;
     }
 
     @Override
