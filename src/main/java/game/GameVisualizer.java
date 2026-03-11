@@ -1,5 +1,7 @@
 package game;
 
+import log.Logger;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -21,7 +23,9 @@ public class GameVisualizer extends JPanel implements PropertyChangeListener {
             @Override
             public void mouseClicked(MouseEvent e) {
                 controller.updateTargetPosition(e.getPoint());
+                Logger.debug("Новая цель: " + "X: "+e.getX() + " Y:"+ e.getY());
             }
+
         });
         setDoubleBuffered(true);
         model.addTextChangeListener(this);

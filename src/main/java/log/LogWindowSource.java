@@ -1,35 +1,30 @@
 package log;
 
+import util.LogList;
+import util.WeakArrayList;
+
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Источник данных для окна лога с ограниченным размером очереди.
  * Хранит фиксированное количество последних записей и уведомляет
  * слушателей об изменениях.
- * <p>
- * Что починить:
- * 1. Этот класс порождает утечку ресурсов (связанные слушатели оказываются
- * удерживаемыми в памяти)
- * 2. Этот класс хранит активные сообщения лога, но в такой реализации он
- * их лишь накапливает. Надо же, чтобы количество сообщений в логе было ограничено
- * величиной m_iQueueLength (т.е. реально нужна очередь сообщений
- * ограниченного размера)
  */
 public class LogWindowSource {
-    private int queueLength;
 
-    private ArrayList<LogEntry> messages;
-    private final ArrayList<LogChangeListener> listeners;
-    private volatile LogChangeListener[] activeListeners;
+   private final LogList messages;
+   private final List<LogChangeListener> listeners;
+   private volatile List<LogChangeListener> activeListeners;
+
 
     /**
      * Создаёт источник лога с заданной максимальной длиной очереди.
      */
     public LogWindowSource(int iQueueLength) {
-        queueLength = iQueueLength;
-        messages = new ArrayList<>(iQueueLength);
-        listeners = new ArrayList<>();
+        messages = new LogList(iQueueLength);
+        listeners = new WeakArrayList<>();
     }
 
     /**
@@ -58,16 +53,17 @@ public class LogWindowSource {
     public void append(LogLevel logLevel, String strMessage) {
         LogEntry entry = new LogEntry(logLevel, strMessage);
         messages.add(entry);
-        LogChangeListener[] activeListeners = this.activeListeners;
-        if (activeListeners == null) {
-            synchronized (listeners) {
-                if (this.activeListeners == null) {
-                    activeListeners = listeners.toArray(new LogChangeListener[0]);
+        List<LogChangeListener> activeListeners = this.activeListeners;
+        if(activeListeners == null){
+            synchronized (listeners){
+                if(this.activeListeners == null){
+                    activeListeners = new WeakArrayList<>(listeners);
                     this.activeListeners = activeListeners;
                 }
             }
         }
-        for (LogChangeListener listener : activeListeners) {
+        assert activeListeners != null;
+        for (LogChangeListener listener : activeListeners){
             listener.onLogChanged();
         }
     }
@@ -94,6 +90,6 @@ public class LogWindowSource {
      * Возвращает все записи лога.
      */
     public Iterable<LogEntry> all() {
-        return messages;
+        return messages::iterator;
     }
 }

@@ -7,8 +7,7 @@ import state.Stateful;
 
 import javax.swing.*;
 import java.awt.*;
-import java.beans.PropertyVetoException;
-import java.util.Map;
+
 
 /**
  * Внутреннее окно для отображения протокола работы приложения.

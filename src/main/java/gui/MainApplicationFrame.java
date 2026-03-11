@@ -258,6 +258,8 @@ public class MainApplicationFrame extends JFrame implements Stateful {
         if (result == JOptionPane.YES_OPTION) {
             Logger.debug("Пользователь подтвердил выход из приложения");
             fireStateSaveEvent();
+            setVisible(false);
+            dispose();
             System.exit(0);
         }
     }
@@ -270,13 +272,19 @@ public class MainApplicationFrame extends JFrame implements Stateful {
         testMenu.setMnemonic(KeyEvent.VK_T);
         testMenu.getAccessibleContext().setAccessibleDescription("Тестовые команды");
 
-        JMenuItem addLogMessageItem = new JMenuItem("Сообщение в лог", KeyEvent.VK_L);
-        addLogMessageItem.addActionListener(e -> Logger.debug("Новая строка"));
-        testMenu.add(addLogMessageItem);
-
+        testMenu.add(createLogMessageItem("Новая строка"));
+        testMenu.add(createLogMessageItem("ругая строка"));
         return testMenu;
     }
 
+    /**
+     * создание сообщения в log
+     */
+    private JMenuItem createLogMessageItem(String text){
+        JMenuItem  addLogMessageItem = new JMenuItem(text + " в лог", KeyEvent.VK_S);
+        addLogMessageItem.addActionListener(e -> Logger.debug(text));
+        return addLogMessageItem;
+    }
     /**
      * Устанавливает схему оформления (Look and Feel) для приложения.
      */
