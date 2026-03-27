@@ -35,6 +35,8 @@ public class FileStateManager {
             try (FileOutputStream out = new FileOutputStream(file)) {
                 props.store(out, "Application State");
             }
+            Logger.debug(LocalizationManager.getInstance().getLocalizedMessage("StateSavedIn") +
+                    configPath);
         } catch (IOException e) {
             Logger.error(LocalizationManager.getInstance().getLocalizedMessage("ErrorSavingState") +
                     e.getMessage());
@@ -57,6 +59,8 @@ public class FileStateManager {
                 }
 
             }
+            Logger.debug(LocalizationManager.getInstance().getLocalizedMessage("StateLoadedFrom") +
+                    configPath);
         } catch (IOException e) {
             Logger.error(LocalizationManager.getInstance().getLocalizedMessage("ErrorLoadingState") + e.getMessage());
         }

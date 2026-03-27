@@ -100,8 +100,6 @@ public class AppStateManager implements StateSaveListener {
                 }
             }
         }
-        Logger.debug(LocalizationManager.getInstance().getLocalizedMessage("StateLoadedFrom") +
-                configPath);
     }
 
 
@@ -141,8 +139,6 @@ public class AppStateManager implements StateSaveListener {
             }
         }
         storage.save();
-        Logger.debug(LocalizationManager.getInstance().getLocalizedMessage("StateSavedIn") +
-                configPath);
     }
 
     private int parseInt(String value, int defaultValue) {

@@ -43,7 +43,7 @@ public class LocalizationManager {
      * форматируя его с помощью предоставленных аргументов.
      */
     public String getLocalizedMessage(String key, String language, Object... arguments) {
-        String pattern = ResourceBundle.getBundle("localization/messages", Locale.of(language)).getString(key);
+        String pattern = ResourceBundle.getBundle("Localization/messages", Locale.of(language)).getString(key);
         MessageFormat messageFormat = messageFormatCache.computeIfAbsent(pattern, s -> new MessageFormat(pattern));
         return messageFormat.format(arguments);
     }
