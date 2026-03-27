@@ -1,6 +1,7 @@
 package gui;
 
 import game.GameModel;
+import localization.LocalizationManager;
 import state.Stateful;
 
 import javax.swing.*;
@@ -24,7 +25,8 @@ public class CoordinatesWindow extends JInternalFrame implements PropertyChangeL
      * @param model
      */
     public CoordinatesWindow(GameModel model) {
-        super("Координатное окно", true, true, true, true);
+        super(LocalizationManager.getInstance().getLocalizedMessage("CoordinatesWindowTitle"),
+                true, true, true, true);
         this.model = model;
         content = new JLabel(robotCoordinates);
 
@@ -39,6 +41,7 @@ public class CoordinatesWindow extends JInternalFrame implements PropertyChangeL
         setSize(400, 100);
         setLocation(50, 50);
         setDefaultCloseOperation(HIDE_ON_CLOSE);
+        LocalizationManager.getInstance().addPropertyChangeListener(this);
     }
 
     @Override
@@ -46,6 +49,9 @@ public class CoordinatesWindow extends JInternalFrame implements PropertyChangeL
         if (Objects.equals(evt.getPropertyName(), GameModel.ROBOT_POSITION_UPDATED)) {
             robotCoordinates = "X:" + model.getRobotX() + ", Y:" + model.getRobotY();
             content.setText(robotCoordinates);
+            repaint();
+        } else if (Objects.equals(evt.getPropertyName(), LocalizationManager.LANGUAGE_UPDATED)) {
+            setTitle(LocalizationManager.getInstance().getLocalizedMessage("CoordinatesWindowTitle"));
             repaint();
         }
     }

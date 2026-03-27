@@ -2,6 +2,8 @@ package state;
 
 
 import gui.MainApplicationFrame;
+import localization.LocalizationManager;
+import log.Logger;
 
 import javax.swing.*;
 import java.beans.PropertyVetoException;
@@ -18,14 +20,12 @@ public class AppStateManager implements StateSaveListener {
     private final FileStateManager storage;
     private final Map<String, String> globalState;
     private final List<Stateful> components = new CopyOnWriteArrayList<>();
-
+    private final String home = System.getProperty("user.home");
+    private final String configPath = home + File.separator + "Dudin" + File.separator + "state.cfg";
     /**
      * Создаёт новый экземпляр менеджера состояний.
      */
     public AppStateManager() {
-        String home = System.getProperty("user.home");
-        String configPath = home + File.separator + "Dudin" + File.separator + "state.cfg";
-
         this.storage = new FileStateManager(configPath);
         this.globalState = storage.getState();
     }
@@ -48,23 +48,27 @@ public class AppStateManager implements StateSaveListener {
             if (prefix.equals("main") && component instanceof JFrame) {
                 JFrame frame = (JFrame) component;
                 try {
-                    int x = parseInt(view.get(prefix + ".x"), frame.getX());
-                    int y = parseInt(view.get(prefix + ".y"), frame.getY());
-                    int w = parseInt(view.get(prefix + ".width"), frame.getWidth());
-                    int h = parseInt(view.get(prefix + ".height"), frame.getHeight());
-                    int ext = parseInt(view.get(prefix + ".extendedState"), frame.getExtendedState());
+                    int x = parseInt(view.get("x"), frame.getX());
+                    int y = parseInt(view.get("y"), frame.getY());
+                    int w = parseInt(view.get("width"), frame.getWidth());
+                    int h = parseInt(view.get("height"), frame.getHeight());
+                    int ext = parseInt(view.get("extendedState"), frame.getExtendedState());
 
                     frame.setBounds(x, y, w, h);
                     frame.setExtendedState(ext);
 
                     if (component instanceof MainApplicationFrame) {
                         MainApplicationFrame main = (MainApplicationFrame) component;
-                        main.setLogWindowCounter(parseInt(view.get(prefix + ".logWindowCounter"), 0));
-                        main.setGameWindowCounter(parseInt(view.get(prefix + ".gameWindowCounter"), 0));
-                        String laf = view.get(prefix + ".lookAndFeel");
+                        main.setLogWindowCounter(parseInt(view.get("logWindowCounter"), 0));
+                        main.setGameWindowCounter(parseInt(view.get("gameWindowCounter"), 0));
+                        String laf = view.get("lookAndFeel");
                         if (laf != null) {
                             main.setCurrentLookAndFeel(laf);
                             main.setLookAndFeel(laf);
+                        }
+                        String savedLanguage = view.get("language");
+                        if (savedLanguage != null && !savedLanguage.isEmpty()) {
+                            LocalizationManager.getInstance().changeLanguageTo(savedLanguage);
                         }
                     }
 
@@ -75,13 +79,13 @@ public class AppStateManager implements StateSaveListener {
             } else if (component instanceof JInternalFrame) {
                 JInternalFrame frame = (JInternalFrame) component;
                 try {
-                    int x = parseInt(view.get(prefix + ".x"), frame.getX());
-                    int y = parseInt(view.get(prefix + ".y"), frame.getY());
-                    int w = parseInt(view.get(prefix + ".width"), frame.getWidth());
-                    int h = parseInt(view.get(prefix + ".height"), frame.getHeight());
-                    boolean isIcon = parseBool(view.get(prefix + ".isIcon"), false);
-                    boolean isMaximum = parseBool(view.get(prefix + ".isMaximum"), false);
-                    boolean isClosed = parseBool(view.get(prefix + ".isClosed"), false);
+                    int x = parseInt(view.get("x"), frame.getX());
+                    int y = parseInt(view.get("y"), frame.getY());
+                    int w = parseInt(view.get("width"), frame.getWidth());
+                    int h = parseInt(view.get("height"), frame.getHeight());
+                    boolean isIcon = parseBool(view.get("isIcon"), false);
+                    boolean isMaximum = parseBool(view.get("isMaximum"), false);
+                    boolean isClosed = parseBool(view.get("isClosed"), false);
 
                     frame.setBounds(x, y, w, h);
                     frame.setIcon(isIcon);
@@ -90,10 +94,14 @@ public class AppStateManager implements StateSaveListener {
                     if (isClosed) frame.setClosed(true);
 
                 } catch (PropertyVetoException e) {
-                    log.Logger.error("Ошибка восстановления окна " + prefix + ": " + e.getMessage());
+                    log.Logger.error(LocalizationManager.getInstance().
+                            getLocalizedMessage("ErrorLoadingState")+
+                            prefix + ": " + e.getMessage());
                 }
             }
         }
+        Logger.debug(LocalizationManager.getInstance().getLocalizedMessage("StateLoadedFrom") +
+                configPath);
     }
 
 
@@ -107,31 +115,34 @@ public class AppStateManager implements StateSaveListener {
 
             if (prefix.equals("main") && component instanceof JFrame) {
                 JFrame frame = (JFrame) component;
-                view.put(prefix + ".x", String.valueOf(frame.getX()));
-                view.put(prefix + ".y", String.valueOf(frame.getY()));
-                view.put(prefix + ".width", String.valueOf(frame.getWidth()));
-                view.put(prefix + ".height", String.valueOf(frame.getHeight()));
-                view.put(prefix + ".extendedState", String.valueOf(frame.getExtendedState()));
+                view.put("x", String.valueOf(frame.getX()));
+                view.put("y", String.valueOf(frame.getY()));
+                view.put("width", String.valueOf(frame.getWidth()));
+                view.put("height", String.valueOf(frame.getHeight()));
+                view.put("extendedState", String.valueOf(frame.getExtendedState()));
 
                 if (component instanceof MainApplicationFrame) {
                     MainApplicationFrame main = (MainApplicationFrame) component;
-                    view.put(prefix + ".logWindowCounter", String.valueOf(main.getLogWindowCounter()));
-                    view.put(prefix + ".gameWindowCounter", String.valueOf(main.getGameWindowCounter()));
-                    view.put(prefix + ".lookAndFeel", main.getCurrentLookAndFeel());
+                    view.put("logWindowCounter", String.valueOf(main.getLogWindowCounter()));
+                    view.put("gameWindowCounter", String.valueOf(main.getGameWindowCounter()));
+                    view.put("language", LocalizationManager.getInstance().getLanguage());
+                    view.put("lookAndFeel", main.getCurrentLookAndFeel());
                 }
 
             } else if (component instanceof JInternalFrame) {
                 JInternalFrame frame = (JInternalFrame) component;
-                view.put(prefix + ".x", String.valueOf(frame.getX()));
-                view.put(prefix + ".y", String.valueOf(frame.getY()));
-                view.put(prefix + ".width", String.valueOf(frame.getWidth()));
-                view.put(prefix + ".height", String.valueOf(frame.getHeight()));
-                view.put(prefix + ".isIcon", String.valueOf(frame.isIcon()));
-                view.put(prefix + ".isMaximum", String.valueOf(frame.isMaximum()));
-                view.put(prefix + ".isClosed", String.valueOf(frame.isClosed()));
+                view.put("x", String.valueOf(frame.getX()));
+                view.put("y", String.valueOf(frame.getY()));
+                view.put("width", String.valueOf(frame.getWidth()));
+                view.put("height", String.valueOf(frame.getHeight()));
+                view.put("isIcon", String.valueOf(frame.isIcon()));
+                view.put("isMaximum", String.valueOf(frame.isMaximum()));
+                view.put("isClosed", String.valueOf(frame.isClosed()));
             }
         }
         storage.save();
+        Logger.debug(LocalizationManager.getInstance().getLocalizedMessage("StateSavedIn") +
+                configPath);
     }
 
     private int parseInt(String value, int defaultValue) {

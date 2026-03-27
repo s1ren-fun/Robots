@@ -1,5 +1,6 @@
 package game;
 
+import localization.LocalizationManager;
 import log.Logger;
 
 import javax.swing.*;
@@ -23,7 +24,8 @@ public class GameVisualizer extends JPanel implements PropertyChangeListener {
             @Override
             public void mouseClicked(MouseEvent e) {
                 controller.updateTargetPosition(e.getPoint());
-                Logger.debug("Новая цель: " + "X: "+e.getX() + " Y:"+ e.getY());
+                Logger.debug(LocalizationManager.getInstance().getLocalizedMessage("NewTargetPosLog",
+                        e.getPoint().x,e.getPoint().y));
             }
 
         });

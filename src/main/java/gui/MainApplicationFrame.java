@@ -1,6 +1,7 @@
 package gui;
 
 import game.GameModel;
+import localization.LocalizationManager;
 import log.Logger;
 import state.AppStateManager;
 import state.StateSaveEvent;
@@ -10,6 +11,8 @@ import state.Stateful;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +22,7 @@ import java.util.List;
  * Содержит меню управления внешним видом и тестовыми командами,
  * а также создаёт начальные внутренние окна: лог и игровое поле.
  */
-public class MainApplicationFrame extends JFrame implements Stateful {
+public class MainApplicationFrame extends JFrame implements Stateful, PropertyChangeListener {
     private final JDesktopPane desktopPane = new JDesktopPane();
     private final AppStateManager stateManager;
     private final List<StateSaveListener> stateSaveListener = new ArrayList<StateSaveListener>();
@@ -55,8 +58,9 @@ public class MainApplicationFrame extends JFrame implements Stateful {
             }
         });
 
-        setJMenuBar(generateMenuBar());
+        setJMenuBar(createMenuBar());
         addStateSaveListener(stateManager);
+        LocalizationManager.getInstance().addPropertyChangeListener(this);
     }
 
     /**
@@ -113,7 +117,9 @@ public class MainApplicationFrame extends JFrame implements Stateful {
         logWindow.setSize(300, 800);
         setMinimumSize(logWindow.getSize());
         logWindow.pack();
-        Logger.debug(logWindowCounter == 0 ? "Протокол работает" : "Создано новое окно лого");
+        Logger.debug(logWindowCounter == 0 ?
+                LocalizationManager.getInstance().getLocalizedMessage("LogWindowActivated") :
+                LocalizationManager.getInstance().getLocalizedMessage("LogWindowCreate"));
         return logWindow;
     }
 
@@ -126,14 +132,14 @@ public class MainApplicationFrame extends JFrame implements Stateful {
         GameWindow gameWindow = new GameWindow(model);
         gameWindow.setLocation(50 + (gameWindowCounter * 30), 50 + (gameWindowCounter * 30));
         gameWindow.setSize(400, 400);
-        Logger.debug("Создано новое игровое окно");
+        Logger.debug(LocalizationManager.getInstance().getLocalizedMessage("GameWindowCreate"));
         return gameWindow;
     }
 
     protected CoordinatesWindow createCoordinatesWindow(GameModel model) {
         CoordinatesWindow coordinatesWindow = new CoordinatesWindow(model);
         coordinatesWindow.setLocation(50 + (gameWindowCounter * 30), 50 + (gameWindowCounter * 30));
-        Logger.debug("Создано новое окно координат");
+        Logger.debug(LocalizationManager.getInstance().getLocalizedMessage("CoorWindowCreate"));
         return coordinatesWindow;
     }
 
@@ -148,23 +154,47 @@ public class MainApplicationFrame extends JFrame implements Stateful {
     /**
      * Генерирует главное меню приложения через делегирование вспомогательным методам.
      */
-    private JMenuBar generateMenuBar() {
+    private JMenuBar createMenuBar() {
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(createFileMenu());
         menuBar.add(createLookAndFeelMenu());
         menuBar.add(createTestMenu());
+        menuBar.add(createLocalizationMenu());
         return menuBar;
     }
 
     /**
+     * создание меню смены языка
+     */
+    private JMenu createLocalizationMenu() {
+        JMenu langChangeMenu = new JMenu(LocalizationManager.getInstance().getLocalizedMessage("LangChange"));
+
+
+        langChangeMenu.add(createLangItem("ru"));
+        langChangeMenu.add(createLangItem("eu"));
+        return langChangeMenu;
+    }
+
+    private JMenuItem createLangItem(String langAcronym) {
+        String langName = LocalizationManager.getInstance().getMessage("LangName", langAcronym);
+        JMenuItem langItem = new JMenuItem(
+                langName);
+        langItem.addActionListener((event) ->
+                LocalizationManager.getInstance().changeLanguageTo(langAcronym));
+
+        return langItem;
+    }
+    /**
      * Создаёт меню "Файл" с пунктом выхода из приложения.
      */
     private JMenu createFileMenu() {
-        JMenu fileMenu = new JMenu("Файл");
+        JMenu fileMenu = new JMenu(LocalizationManager.getInstance().getLocalizedMessage("File"));
         fileMenu.setMnemonic(KeyEvent.VK_F);
-        fileMenu.getAccessibleContext().setAccessibleDescription("Операции с приложением");
+        fileMenu.getAccessibleContext().setAccessibleDescription(LocalizationManager.getInstance().
+                getLocalizedMessage("Operation"));
 
-        JMenuItem gameItem = new JMenuItem("Новое игровое окно", KeyEvent.VK_G);
+        JMenuItem gameItem = new JMenuItem(LocalizationManager.getInstance().getLocalizedMessage("NewGameWindow"),
+                KeyEvent.VK_G);
         gameItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.CTRL_DOWN_MASK));
         gameItem.addActionListener(e -> {
             GameModel model = new GameModel();
@@ -180,7 +210,8 @@ public class MainApplicationFrame extends JFrame implements Stateful {
         });
         fileMenu.add(gameItem);
 
-        JMenuItem logItem = new JMenuItem("Новое окно лога", KeyEvent.VK_L);
+        JMenuItem logItem = new JMenuItem(LocalizationManager.getInstance().getLocalizedMessage("NewLogWindow"),
+                KeyEvent.VK_L);
         logItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.CTRL_DOWN_MASK));
         logItem.addActionListener(e -> {
             LogWindow logWindow = createLogWindow();
@@ -191,7 +222,8 @@ public class MainApplicationFrame extends JFrame implements Stateful {
         });
         fileMenu.add(logItem);
 
-        JMenuItem exitItem = new JMenuItem("Выход", KeyEvent.VK_X);
+        JMenuItem exitItem = new JMenuItem(LocalizationManager.getInstance().getLocalizedMessage("ExitMenu"),
+                KeyEvent.VK_X);
         exitItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK));
         exitItem.addActionListener(e -> {
             Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
@@ -206,12 +238,14 @@ public class MainApplicationFrame extends JFrame implements Stateful {
      * Создаёт меню выбора схемы оформления.
      */
     private JMenu createLookAndFeelMenu() {
-        JMenu lookAndFeelMenu = new JMenu("Режим отображения");
+        JMenu lookAndFeelMenu = new JMenu(LocalizationManager.getInstance().getLocalizedMessage("DisplayMode"));
         lookAndFeelMenu.setMnemonic(KeyEvent.VK_V);
         lookAndFeelMenu.getAccessibleContext().setAccessibleDescription(
-                "Управление режимом отображения приложения");
+                LocalizationManager.getInstance().getLocalizedMessage("DisplayModeDescription"));
 
-        JMenuItem systemLookAndFeel = new JMenuItem("Системная схема", KeyEvent.VK_S);
+        JMenuItem systemLookAndFeel = new JMenuItem(LocalizationManager.getInstance().
+                getLocalizedMessage("CrossPlatformLookAndFeelItem"),
+                KeyEvent.VK_S);
         systemLookAndFeel.addActionListener(e -> {
             setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             currentLookAndFeel = UIManager.getSystemLookAndFeelClassName();
@@ -219,7 +253,9 @@ public class MainApplicationFrame extends JFrame implements Stateful {
         });
         lookAndFeelMenu.add(systemLookAndFeel);
 
-        JMenuItem crossplatformLookAndFeel = new JMenuItem("Универсальная схема", KeyEvent.VK_U);
+        JMenuItem crossplatformLookAndFeel = new JMenuItem(LocalizationManager.getInstance().
+                getLocalizedMessage("SystemLookAndFeelItem"),
+                KeyEvent.VK_U);
         crossplatformLookAndFeel.addActionListener(e -> {
             setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
             currentLookAndFeel = UIManager.getCrossPlatformLookAndFeelClassName();
@@ -227,7 +263,9 @@ public class MainApplicationFrame extends JFrame implements Stateful {
         });
         lookAndFeelMenu.add(crossplatformLookAndFeel);
 
-        JMenuItem nimbusLookAndFeel = new JMenuItem("Обычная схема", KeyEvent.VK_N);
+        JMenuItem nimbusLookAndFeel = new JMenuItem(LocalizationManager.getInstance().
+                getLocalizedMessage("DefaultLookAndFeelItem"),
+                KeyEvent.VK_N);
         nimbusLookAndFeel.addActionListener(e -> {
             setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
             currentLookAndFeel = "javax.swing.plaf.nimbus.NimbusLookAndFeel";
@@ -243,11 +281,12 @@ public class MainApplicationFrame extends JFrame implements Stateful {
      * Завершает приложение при подтверждении.
      */
     private void confirmExit() {
-        Object[] options = {"Да", "Нет"};
+        LocalizationManager local = LocalizationManager.getInstance();
+        Object[] options = {local.getLocalizedMessage("Yes"),local.getLocalizedMessage("No")};
         int result = JOptionPane.showOptionDialog(
                 this,
-                "Вы действительно хотите выйти из приложения?",
-                "Подтверждение выхода",
+                local.getLocalizedMessage("ExitConfirm"),
+                local.getLocalizedMessage("ExitTitle"),
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.QUESTION_MESSAGE,
                 null,
@@ -256,7 +295,6 @@ public class MainApplicationFrame extends JFrame implements Stateful {
         );
 
         if (result == JOptionPane.YES_OPTION) {
-            Logger.debug("Пользователь подтвердил выход из приложения");
             fireStateSaveEvent();
             setVisible(false);
             dispose();
@@ -268,12 +306,13 @@ public class MainApplicationFrame extends JFrame implements Stateful {
      * Создаёт меню тестовых команд.
      */
     private JMenu createTestMenu() {
-        JMenu testMenu = new JMenu("Тесты");
+        JMenu testMenu = new JMenu(LocalizationManager.getInstance().getLocalizedMessage("TestMenu"));
         testMenu.setMnemonic(KeyEvent.VK_T);
-        testMenu.getAccessibleContext().setAccessibleDescription("Тестовые команды");
+        testMenu.getAccessibleContext().setAccessibleDescription(LocalizationManager.getInstance().
+                getLocalizedMessage("TestMenuDescription"));
 
-        testMenu.add(createLogMessageItem("Новая строка"));
-        testMenu.add(createLogMessageItem("ругая строка"));
+        testMenu.add(createLogMessageItem(LocalizationManager.getInstance().getLocalizedMessage("TestLogMessage1")));
+        testMenu.add(createLogMessageItem(LocalizationManager.getInstance().getLocalizedMessage("TestLogMessage2")));
         return testMenu;
     }
 
@@ -281,8 +320,12 @@ public class MainApplicationFrame extends JFrame implements Stateful {
      * создание сообщения в log
      */
     private JMenuItem createLogMessageItem(String text){
-        JMenuItem  addLogMessageItem = new JMenuItem(text + " в лог", KeyEvent.VK_S);
-        addLogMessageItem.addActionListener(e -> Logger.debug(text));
+        String addedText = LocalizationManager.getInstance()
+                .getLocalizedMessage("LogMessagePattern", (Object) text);
+        JMenuItem addLogMessageItem = new JMenuItem(text, KeyEvent.VK_S);
+        addLogMessageItem.addActionListener((event) ->
+                Logger.debug(addedText));
+
         return addLogMessageItem;
     }
     /**
@@ -312,4 +355,8 @@ public class MainApplicationFrame extends JFrame implements Stateful {
         return "main";
     }
 
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        setJMenuBar(createMenuBar());
+    }
 }
