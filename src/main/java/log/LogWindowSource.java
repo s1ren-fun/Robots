@@ -1,9 +1,7 @@
 package log;
 
-import util.LogList;
 import util.WeakArrayList;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 

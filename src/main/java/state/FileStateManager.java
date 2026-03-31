@@ -1,13 +1,14 @@
 package state;
 
-import localization.LocalizationManager;
-import log.Logger;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class FileStateManager {
+    private final Logger LOGGER = java.util.logging.Logger.getLogger(FileStateManager.class.getName());
     private final String configPath;
     private final Map<String, String> state = new HashMap<>();
 
@@ -35,11 +36,9 @@ public class FileStateManager {
             try (FileOutputStream out = new FileOutputStream(file)) {
                 props.store(out, "Application State");
             }
-            Logger.debug(LocalizationManager.getInstance().getLocalizedMessage("StateSavedIn") +
-                    configPath);
+            LOGGER.info("Cвойства успешно сохранены");
         } catch (IOException e) {
-            Logger.error(LocalizationManager.getInstance().getLocalizedMessage("ErrorSavingState") +
-                    e.getMessage());
+            LOGGER.log(Level.SEVERE, "Ошибка сохранения состояния", e);
         }
     }
 
@@ -59,10 +58,8 @@ public class FileStateManager {
                 }
 
             }
-            Logger.debug(LocalizationManager.getInstance().getLocalizedMessage("StateLoadedFrom") +
-                    configPath);
+            LOGGER.info("Состояние загружено");
         } catch (IOException e) {
-            Logger.error(LocalizationManager.getInstance().getLocalizedMessage("ErrorLoadingState") + e.getMessage());
-        }
+            LOGGER.log(Level.SEVERE, "Ошибка загрузки состояния", e);        }
     }
 }

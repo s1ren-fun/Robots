@@ -1,6 +1,4 @@
-package util;
-
-import log.LogEntry;
+package log;
 
 import java.util.*;
 
