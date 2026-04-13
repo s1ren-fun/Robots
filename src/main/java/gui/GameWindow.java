@@ -3,7 +3,7 @@ package gui;
 import game.GameController;
 import game.GameModel;
 import game.GameVisualizer;
-import localization.LocalizationManager;
+import Localization.LocalizationManager;
 import state.Stateful;
 
 import javax.swing.*;

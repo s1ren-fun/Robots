@@ -1,6 +1,6 @@
 package game;
 
-import localization.LocalizationManager;
+import Localization.LocalizationManager;
 import log.Logger;
 
 import javax.swing.*;

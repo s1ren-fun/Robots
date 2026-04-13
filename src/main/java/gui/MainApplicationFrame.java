@@ -1,8 +1,9 @@
 package gui;
 
 import game.GameModel;
-import localization.LocalizationManager;
+import Localization.LocalizationManager;
 import log.Logger;
+
 import state.AppStateManager;
 import state.StateSaveEvent;
 import state.StateSaveListener;
@@ -15,6 +16,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
+
 
 
 /**
@@ -160,6 +162,7 @@ public class MainApplicationFrame extends JFrame implements Stateful, PropertyCh
         menuBar.add(createLookAndFeelMenu());
         menuBar.add(createTestMenu());
         menuBar.add(createLocalizationMenu());
+        menuBar.add(createNetworkMenu());
         return menuBar;
     }
 
@@ -358,5 +361,49 @@ public class MainApplicationFrame extends JFrame implements Stateful, PropertyCh
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         setJMenuBar(createMenuBar());
+    }
+
+    /**
+     * Создаёт меню для сетевой игры.
+     */
+    private JMenu createNetworkMenu() {
+        JMenu networkMenu = new JMenu(LocalizationManager.getInstance()
+                .getLocalizedMessage("NetworkGame"));
+        networkMenu.setMnemonic(KeyEvent.VK_N);
+
+        Object[] options = {LocalizationManager.getInstance().getLocalizedMessage("Yes"),
+                LocalizationManager.getInstance().getLocalizedMessage("No")};
+
+        JMenuItem hostItem = new JMenuItem(
+                LocalizationManager.getInstance().getLocalizedMessage("HostGame"),
+                KeyEvent.VK_H);
+        hostItem.addActionListener(e -> {
+            int result = JOptionPane.showOptionDialog(this,
+                    LocalizationManager.getInstance().getLocalizedMessage("HostGameMassage"),
+                    LocalizationManager.getInstance().getLocalizedMessage("Confirmation"),
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    options,
+                    options[1]);
+            if (result == JOptionPane.YES_OPTION) {
+                NetworkGameWindow.startAsHost();
+            }
+        });
+        networkMenu.add(hostItem);
+
+        JMenuItem joinItem = new JMenuItem(
+                LocalizationManager.getInstance().getLocalizedMessage("JoinGame"),
+                KeyEvent.VK_J);
+        joinItem.addActionListener(e -> {
+            String host = JOptionPane.showInputDialog(this,
+                    LocalizationManager.getInstance().getLocalizedMessage("JoinGameMassage"), "127.0.0.1");
+            if (host != null && !host.trim().isEmpty()) {
+                NetworkGameWindow.startAsClient(host.trim());
+            }
+        });
+        networkMenu.add(joinItem);
+
+        return networkMenu;
     }
 }

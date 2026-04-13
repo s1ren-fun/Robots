@@ -1,7 +1,7 @@
 package gui;
 
 import game.GameModel;
-import localization.LocalizationManager;
+import Localization.LocalizationManager;
 import state.Stateful;
 
 import javax.swing.*;

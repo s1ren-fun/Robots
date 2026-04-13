@@ -2,8 +2,7 @@ package state;
 
 
 import gui.MainApplicationFrame;
-import localization.LocalizationManager;
-import log.Logger;
+import Localization.LocalizationManager;
 
 import javax.swing.*;
 import java.beans.PropertyVetoException;
