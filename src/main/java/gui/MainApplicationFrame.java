@@ -2,12 +2,15 @@ package gui;
 
 import game.GameModel;
 import Localization.LocalizationManager;
+import game.RobotDefalte;
+import game.RobotModel;
 import log.Logger;
 
 import state.AppStateManager;
 import state.StateSaveEvent;
 import state.StateSaveListener;
 import state.Stateful;
+import util.RobotLoader;
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,6 +34,7 @@ public class MainApplicationFrame extends JFrame implements Stateful, PropertyCh
     private int logWindowCounter = 0;
     private int gameWindowCounter = 0;
     private String currentLookAndFeel = "javax.swing.plaf.nimbus.NimbusLookAndFeel";
+    private final GameModel model=new GameModel();
 
     /**
      * Создаёт главное окно приложения, размещённое по центру экрана
@@ -96,7 +100,6 @@ public class MainApplicationFrame extends JFrame implements Stateful, PropertyCh
         }
 
         for (int i = 0; i <= gameWindowCounter; i++) {
-            GameModel model = new GameModel();
             GameWindow gameWindow = createGameWindow(model);
             addWindow(gameWindow);
             gameWindow.setWindowName("game_"+i);
@@ -163,6 +166,7 @@ public class MainApplicationFrame extends JFrame implements Stateful, PropertyCh
         menuBar.add(createTestMenu());
         menuBar.add(createLocalizationMenu());
         menuBar.add(createNetworkMenu());
+        menuBar.add(createRobotChangerMenu());
         return menuBar;
     }
 
@@ -200,7 +204,6 @@ public class MainApplicationFrame extends JFrame implements Stateful, PropertyCh
                 KeyEvent.VK_G);
         gameItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, InputEvent.CTRL_DOWN_MASK));
         gameItem.addActionListener(e -> {
-            GameModel model = new GameModel();
             GameWindow gameWindow = createGameWindow(model);
             addWindow(gameWindow);
             gameWindowCounter++;
@@ -405,5 +408,46 @@ public class MainApplicationFrame extends JFrame implements Stateful, PropertyCh
         networkMenu.add(joinItem);
 
         return networkMenu;
+    }
+
+    /**
+     * Создает меню с выбором робота
+     */
+    private JMenu createRobotChangerMenu() {
+        JMenu robotChangeMenu = new JMenu(LocalizationManager.getInstance().getLocalizedMessage("RobotChangeMenu"));
+
+        robotChangeMenu.add(createRobotSetter("DefaultRobot", false));
+        robotChangeMenu.add(createRobotSetter("NewRobot", true));
+        return robotChangeMenu;
+    }
+
+    /**
+     * Создает и возвращает кнопку для загрузки робота
+     * @param keyForOptionName Название кнопки
+     * @param isLoadingRobot true - если загружаем робота извне,
+     *                       false - дефолтные робот
+     */
+    private JMenuItem createRobotSetter(String keyForOptionName, boolean isLoadingRobot) {
+        String menuItemName = LocalizationManager.getInstance().getLocalizedMessage(keyForOptionName);
+        JMenuItem robotItem = new JMenuItem(menuItemName);
+
+        robotItem.addActionListener((e -> changeRobot(isLoadingRobot)));
+        return robotItem;
+    }
+
+    /**
+     * Заменяет робота
+     * @param isLoadingRobot true - если загружаем робота извне,
+     *                       false - дефолтные робот
+     */
+    private void changeRobot(boolean isLoadingRobot) {
+        RobotModel robotModel;
+
+        if (isLoadingRobot) {
+            robotModel = RobotLoader.getNewRobotOrDefault(new RobotDefalte(), this);
+        } else {
+            robotModel = new RobotDefalte();
+        }
+        model.setRobotModel(robotModel);
     }
 }
